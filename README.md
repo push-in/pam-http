@@ -101,6 +101,25 @@ supported PHP version.
 See the [PAM API 2 design and delivery contract](docs/API-2.md) for the complete
 15-track implementation plan and current delivery status.
 
+## Distributed rate limiting
+
+`RateLimitMiddleware` uses a bounded in-memory token bucket by default and
+accepts any `RateLimitStore` for process-wide or distributed enforcement:
+
+```php
+$app->middleware(new RateLimitMiddleware(
+    requestsPerSecond: 20,
+    burst: 40,
+    store: $redisRateLimitStore,
+    keyResolver: static fn (Request $request): string =>
+        'token:' . $request->getHeader('authorization', 'anonymous'),
+));
+```
+
+The middleware emits limit/remaining/retry headers and a Problem Details `429`
+response. Applications behind proxies must supply a key resolver that trusts
+only their explicitly configured proxy boundary.
+
 ## License
 
 Free and open-source under the [Apache License 2.0](LICENSE). You may use,

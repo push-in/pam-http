@@ -68,7 +68,7 @@ The `feat/api-2-foundation` development line currently implements:
 - Problem Details validation responses;
 - JSON Resources and Resource Collections;
 - PHPUnit and PHPStan level 9 verification.
+- pluggable rate-limit stores with a bounded in-memory token bucket fallback.
 
 Remaining tracks will land behind stable contracts with tests before they are
 documented as production-ready.
-
