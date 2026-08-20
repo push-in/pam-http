@@ -279,6 +279,6 @@ final class App implements ApplicationInterface
         $this->assertMutable();
         $route = $this->router->register($method, $path, $this->handlerResolver->resolve($handler));
         $route->sourceHandler = $handler;
-        return new PendingRoute($this->router, $route);
+        return new PendingRoute($this, $this->router, $route);
     }
 }

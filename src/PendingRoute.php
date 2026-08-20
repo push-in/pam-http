@@ -4,14 +4,52 @@ declare(strict_types=1);
 
 namespace Pam\Api;
 
+use Pam\App;
 use Pam\Contracts\Http\MiddlewareInterface;
 
 final readonly class PendingRoute
 {
     public function __construct(
+        private App $app,
         private Router $router,
         private Route $route,
     ) {
+    }
+
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function get(string $path, callable|string|array $handler): self
+    {
+        return $this->app->get($path, $handler);
+    }
+
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function post(string $path, callable|string|array $handler): self
+    {
+        return $this->app->post($path, $handler);
+    }
+
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function put(string $path, callable|string|array $handler): self
+    {
+        return $this->app->put($path, $handler);
+    }
+
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function patch(string $path, callable|string|array $handler): self
+    {
+        return $this->app->patch($path, $handler);
+    }
+
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function delete(string $path, callable|string|array $handler): self
+    {
+        return $this->app->delete($path, $handler);
+    }
+
+    /** @param array<string, mixed> $options */
+    public function listen(int $port, string $host = '127.0.0.1', array $options = []): void
+    {
+        $this->app->listen($port, $host, $options);
     }
 
     public function name(string $name): self
@@ -43,7 +81,7 @@ final readonly class PendingRoute
 
     private function container(): \Pam\Api\Container\Container
     {
-        return $this->router->container();
+        return $this->app->container();
     }
 
     public function definition(): Route

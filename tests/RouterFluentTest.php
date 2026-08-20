@@ -13,6 +13,15 @@ use PHPUnit\Framework\TestCase;
 
 final class RouterFluentTest extends TestCase
 {
+    public function testLegacyVerbChainingRemainsSupported(): void
+    {
+        $app = new App(discoverPackages: false);
+        $app->get('/one', static fn (Request $request, Response $response): Response => $response->send('one'))
+            ->post('/two', static fn (Request $request, Response $response): Response => $response->send('two'));
+
+        self::assertSame(200, $app->handle($this->request('POST', '/two'), new Response())->export()['status']);
+    }
+
     public function testAConstraintPreventsAnInvalidDynamicMatch(): void
     {
         $app = new App(discoverPackages: false);
@@ -54,4 +63,3 @@ final class RouterFluentTest extends TestCase
         return new Request($method, $path, [], [], '');
     }
 }
-
