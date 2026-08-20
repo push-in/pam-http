@@ -2,6 +2,10 @@
 
 Express-like routing. Laravel-like application structure. PAM-native execution.
 
+**[Official documentation](https://push-in.github.io/pam-docs/packages/api/) ·
+[PAM introduction](https://push-in.github.io/pam-docs/introduction/) ·
+[Report an issue](https://github.com/push-in/pam-api/issues)**
+
 ```bash
 pam composer require pushinbr/pam-api
 ```
