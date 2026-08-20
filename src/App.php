@@ -8,10 +8,15 @@ use Pam\Contracts\Http\ApplicationInterface;
 use Pam\Contracts\Http\MiddlewareInterface;
 use Pam\Contracts\Package\ServiceProviderInterface;
 use Pam\Api\CallableRequestHandler;
+use Pam\Api\Container\Container;
+use Pam\Api\HandlerResolver;
+use Pam\Api\Http\HttpException;
 use Pam\Api\PackageDiscovery;
+use Pam\Api\PendingRoute;
 use Pam\Api\Pipeline;
 use Pam\Api\Router;
 use Pam\Api\RoutingResultType;
+use Pam\Api\RouteRegistrar;
 use Pam\Http\Request;
 use Pam\Http\Response;
 use Pam\Http\Server as HttpServer;
@@ -20,6 +25,10 @@ use Pam\Internal\Runtime;
 final class App implements ApplicationInterface
 {
     private readonly Router $router;
+
+    private readonly Container $container;
+
+    private readonly HandlerResolver $handlerResolver;
 
     /** @var list<MiddlewareInterface|callable> */
     private array $middleware = [];
@@ -38,16 +47,23 @@ final class App implements ApplicationInterface
 
     private bool $frozen = false;
 
-    public function __construct(bool $discoverPackages = true)
+    public function __construct(bool $discoverPackages = true, ?Container $container = null)
     {
         $this->router = new Router();
+        $this->container = $container ?? new Container();
+        $this->handlerResolver = new HandlerResolver($this->container);
+        $this->container->instance(self::class, $this);
+        $this->container->instance(Container::class, $this->container);
         $this->errorHandler = static function (\Throwable $error, Response $response): Response {
-            \Pam\Observability\Telemetry::log('error', 'Unhandled Pam API exception', [
-                'exception' => $error::class,
-                'message' => $error->getMessage(),
-                'file' => $error->getFile(),
-                'line' => $error->getLine(),
-            ]);
+            $telemetry = ['Pam\\Observability\\Telemetry', 'log'];
+            if (is_callable($telemetry)) {
+                $telemetry('error', 'Unhandled Pam API exception', [
+                    'exception' => $error::class,
+                    'message' => $error->getMessage(),
+                    'file' => $error->getFile(),
+                    'line' => $error->getLine(),
+                ]);
+            }
             return $response->json(['error' => 'Internal Server Error'], 500);
         };
 
@@ -61,36 +77,57 @@ final class App implements ApplicationInterface
         }
     }
 
-    public function get(string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function get(string $path, callable|string|array $handler): PendingRoute
     {
-        return $this->route('GET', $path, $handler);
+        return $this->registerRoute('GET', $path, $handler);
     }
 
-    public function post(string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function post(string $path, callable|string|array $handler): PendingRoute
     {
-        return $this->route('POST', $path, $handler);
+        return $this->registerRoute('POST', $path, $handler);
     }
 
-    public function put(string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function put(string $path, callable|string|array $handler): PendingRoute
     {
-        return $this->route('PUT', $path, $handler);
+        return $this->registerRoute('PUT', $path, $handler);
     }
 
-    public function patch(string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function patch(string $path, callable|string|array $handler): PendingRoute
     {
-        return $this->route('PATCH', $path, $handler);
+        return $this->registerRoute('PATCH', $path, $handler);
     }
 
-    public function delete(string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function delete(string $path, callable|string|array $handler): PendingRoute
     {
-        return $this->route('DELETE', $path, $handler);
+        return $this->registerRoute('DELETE', $path, $handler);
     }
 
-    public function route(string $method, string $path, callable $handler): self
+    /** @param callable|class-string|array{class-string, non-empty-string} $handler */
+    public function route(string $method, string $path, callable|string|array $handler): self
     {
-        $this->assertMutable();
-        $this->router->add($method, $path, $handler);
+        $this->registerRoute($method, $path, $handler);
         return $this;
+    }
+
+    public function container(): Container
+    {
+        return $this->container;
+    }
+
+    public function prefix(string $prefix): RouteRegistrar
+    {
+        return new RouteRegistrar($this, $prefix);
+    }
+
+    /** @param callable(RouteRegistrar): void $routes */
+    public function group(callable $routes): void
+    {
+        (new RouteRegistrar($this))->group($routes);
     }
 
     public function middleware(object|callable $middleware): self
@@ -152,16 +189,30 @@ final class App implements ApplicationInterface
     public function handle(Request $request, Response $response): Response
     {
         $this->freeze();
+        $this->container->beginScope();
+        $this->container->scopedInstance(Request::class, $request);
+        $this->container->scopedInstance(Response::class, $response);
         try {
             return $this->pipeline?->handle($request, $response)
                 ?? throw new \LogicException('Pam API pipeline was not compiled.');
         } catch (\Throwable $error) {
+            if ($error instanceof HttpException) {
+                return $response->json([
+                    'type' => 'https://pam.dev/problems/' . $error->problemCode->value,
+                    'title' => $error->getMessage(),
+                    'status' => $error->status,
+                    'code' => $error->problemCode->value,
+                    ...$error->details,
+                ], $error->status);
+            }
             $handler = $this->errorHandler;
             $result = $handler($error, $response);
             if (!$result instanceof Response) {
                 throw new \UnexpectedValueException('The Pam error handler must return Response.');
             }
             return $result;
+        } finally {
+            $this->container->endScope();
         }
     }
 
@@ -178,7 +229,11 @@ final class App implements ApplicationInterface
         }
         $route = $result->route ?? throw new \LogicException('A matched route must contain a handler.');
         $request = $request->withRouteParameters($result->parameters);
-        return (new CallableRequestHandler($route->handler))->handle($request, $response);
+        $destination = new CallableRequestHandler($route->handler);
+        if ($route->middleware === []) {
+            return $destination->handle($request, $response);
+        }
+        return (new Pipeline($route->middleware, $destination))->handle($request, $response);
     }
 
     private function freeze(): void
@@ -201,5 +256,15 @@ final class App implements ApplicationInterface
         if ($this->frozen) {
             throw new \LogicException('Pam application configuration is frozen after it starts handling requests.');
         }
+    }
+
+    /**
+     * @param callable|class-string|array{class-string, non-empty-string} $handler
+     */
+    private function registerRoute(string $method, string $path, callable|string|array $handler): PendingRoute
+    {
+        $this->assertMutable();
+        $route = $this->router->register($method, $path, $this->handlerResolver->resolve($handler));
+        return new PendingRoute($this->router, $route);
     }
 }

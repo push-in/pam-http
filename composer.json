@@ -31,7 +31,27 @@
             "Pam\\Api\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Pam\\Api\\Tests\\": "tests/"
+        },
+        "files": [
+            "tests/bootstrap.php"
+        ]
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "test": "phpunit --configuration=phpunit.xml",
+        "verify": [
+            "@analyse",
+            "@test"
+        ]
+    },
     "config": {
         "sort-packages": true
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
     }
 }

@@ -4,9 +4,16 @@ declare(strict_types=1);
 
 namespace Pam\Api;
 
-final readonly class Route
+use Pam\Contracts\Http\MiddlewareInterface;
+
+final class Route
 {
     public \Closure $handler;
+
+    /** @var list<MiddlewareInterface|callable> */
+    public array $middleware = [];
+
+    public ?string $name = null;
 
     /** @param list<string> $parameterNames */
     public function __construct(
@@ -14,7 +21,7 @@ final readonly class Route
         public string $path,
         callable $handler,
         public string $pattern,
-        public array $parameterNames,
+        public readonly array $parameterNames,
     ) {
         $this->handler = \Closure::fromCallable($handler);
     }
