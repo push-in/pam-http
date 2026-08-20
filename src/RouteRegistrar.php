@@ -25,11 +25,14 @@ final class RouteRegistrar
         return $clone;
     }
 
-    /** @param MiddlewareInterface|callable|list<MiddlewareInterface|callable> $middleware */
-    public function middleware(MiddlewareInterface|callable|array $middleware): self
+    /** @param MiddlewareInterface|callable|class-string<MiddlewareInterface>|list<MiddlewareInterface|callable|class-string<MiddlewareInterface>> $middleware */
+    public function middleware(MiddlewareInterface|callable|string|array $middleware): self
     {
         $clone = clone $this;
         foreach (is_array($middleware) ? $middleware : [$middleware] as $layer) {
+            if (is_string($layer) && is_a($layer, MiddlewareInterface::class, true)) {
+                $layer = new ContainerMiddleware($this->app->container(), $layer);
+            }
             if (!$layer instanceof MiddlewareInterface && !is_callable($layer)) {
                 throw new \InvalidArgumentException('Group middleware must implement the PAM contract or be callable.');
             }

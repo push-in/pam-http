@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pam\Api\Container;
 
+use Pam\Api\Routing\RouteBindable;
+
 final class Container
 {
     /** @var array<class-string|string, Binding> */
@@ -16,6 +18,16 @@ final class Container
     private array $scoped = [];
 
     private bool $scopeActive = false;
+
+    /** @var array<class-string, \Closure(string, Container): object> */
+    private array $routeBindings = [];
+
+    /** @param class-string $class @param callable(string, Container): object $resolver */
+    public function bindRoute(string $class, callable $resolver): self
+    {
+        $this->routeBindings[$class] = \Closure::fromCallable($resolver);
+        return $this;
+    }
 
     /** @param class-string|string $id */
     public function bind(string $id, callable|string|null $factory = null): self
@@ -48,6 +60,22 @@ final class Container
         }
         $this->scoped[$id] = $instance;
         return $this;
+    }
+
+    public function scopedValue(string $id): mixed
+    {
+        return $this->scoped[$id] ?? null;
+    }
+
+    /** @return array{state: int, scopedEntries: int, singletonEntries: int, bindings: int} */
+    public function diagnostics(): array
+    {
+        return [
+            'state' => ($this->scopeActive ? ContainerState::RequestActive : ContainerState::Idle)->value,
+            'scopedEntries' => count($this->scoped),
+            'singletonEntries' => count($this->singletons),
+            'bindings' => count($this->bindings),
+        ];
     }
 
     public function beginScope(): void
@@ -132,11 +160,30 @@ final class Container
     {
         $arguments = [];
         foreach ($parameters as $parameter) {
+            $type = $parameter->getType();
             if (array_key_exists($parameter->getName(), $named)) {
-                $arguments[] = $named[$parameter->getName()];
+                $value = $named[$parameter->getName()];
+                if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
+                    $class = $type->getName();
+                    $resolver = $this->routeBindings[$class] ?? null;
+                    if ($resolver !== null) {
+                        $resolved = $resolver(self::routeValue($value), $this);
+                    } elseif (is_a($class, RouteBindable::class, true)) {
+                        $resolved = $class::resolveRouteBinding(self::routeValue($value));
+                    } else {
+                        throw new \RuntimeException(
+                            "Route parameter {$parameter->getName()} cannot resolve {$class}; register bindRoute() or implement RouteBindable.",
+                        );
+                    }
+                    if (!$resolved instanceof $class) {
+                        throw new \UnexpectedValueException("Route binding for {$class} returned another type.");
+                    }
+                    $arguments[] = $resolved;
+                } else {
+                    $arguments[] = $value;
+                }
                 continue;
             }
-            $type = $parameter->getType();
             if ($type instanceof \ReflectionNamedType && !$type->isBuiltin()) {
                 $class = $type->getName();
                 $matched = null;
@@ -182,5 +229,16 @@ final class Container
         $this->bindings[$id] = new Binding($resolver, $lifetime);
         unset($this->singletons[$id], $this->scoped[$id]);
         return $this;
+    }
+
+    private static function routeValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value) || is_bool($value) || $value instanceof \Stringable) {
+            return (string) $value;
+        }
+        throw new \UnexpectedValueException('Route binding values must be scalar or stringable.');
     }
 }

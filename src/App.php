@@ -17,6 +17,7 @@ use Pam\Api\Pipeline;
 use Pam\Api\Router;
 use Pam\Api\RoutingResultType;
 use Pam\Api\RouteRegistrar;
+use Pam\Api\OpenApi\OpenApiGenerator;
 use Pam\Http\Request;
 use Pam\Http\Response;
 use Pam\Http\Server as HttpServer;
@@ -49,8 +50,8 @@ final class App implements ApplicationInterface
 
     public function __construct(bool $discoverPackages = true, ?Container $container = null)
     {
-        $this->router = new Router();
         $this->container = $container ?? new Container();
+        $this->router = new Router($this->container);
         $this->handlerResolver = new HandlerResolver($this->container);
         $this->container->instance(self::class, $this);
         $this->container->instance(Container::class, $this->container);
@@ -130,16 +131,27 @@ final class App implements ApplicationInterface
         (new RouteRegistrar($this))->group($routes);
     }
 
-    public function middleware(object|callable $middleware): self
+    public function openApi(string $title = 'PAM API', string $version = '1.0.0'): OpenApiGenerator
+    {
+        return new OpenApiGenerator($this->router, $title, $version);
+    }
+
+    /** @param MiddlewareInterface|callable|class-string<MiddlewareInterface> $middleware */
+    public function middleware(object|callable|string $middleware): self
     {
         $this->assertMutable();
+        if (is_string($middleware)) {
+            if (is_a($middleware, MiddlewareInterface::class, true)) {
+                $middleware = new \Pam\Api\ContainerMiddleware($this->container, $middleware);
+            }
+        }
         if (interface_exists(\Psr\Http\Server\MiddlewareInterface::class)
             && $middleware instanceof \Psr\Http\Server\MiddlewareInterface
         ) {
             $this->psrMiddleware[] = $middleware;
             return $this;
         }
-        if (!$middleware instanceof MiddlewareInterface && !is_callable($middleware)) {
+        if (is_object($middleware) && !$middleware instanceof MiddlewareInterface && !method_exists($middleware, '__invoke')) {
             throw new \InvalidArgumentException('Middleware must implement a Pam/PSR contract or be callable.');
         }
         $this->middleware[] = $middleware;
@@ -228,6 +240,7 @@ final class App implements ApplicationInterface
                 ->json(['error' => 'Method Not Allowed'], 405);
         }
         $route = $result->route ?? throw new \LogicException('A matched route must contain a handler.');
+        $this->container->scopedInstance(\Pam\Api\Route::class, $route);
         $request = $request->withRouteParameters($result->parameters);
         $destination = new CallableRequestHandler($route->handler);
         if ($route->middleware === []) {
@@ -265,6 +278,7 @@ final class App implements ApplicationInterface
     {
         $this->assertMutable();
         $route = $this->router->register($method, $path, $this->handlerResolver->resolve($handler));
+        $route->sourceHandler = $handler;
         return new PendingRoute($this->router, $route);
     }
 }

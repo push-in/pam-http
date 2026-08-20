@@ -120,6 +120,52 @@ The middleware emits limit/remaining/retry headers and a Problem Details `429`
 response. Applications behind proxies must supply a key resolver that trusts
 only their explicitly configured proxy boundary.
 
+## Production building blocks
+
+PAM API exposes small, replaceable contracts instead of choosing application
+infrastructure:
+
+- authenticators, principals and ability checks;
+- idempotency and response-cache stores;
+- request-scoped tenant resolution;
+- transactions, events and bounded jobs;
+- retry, circuit breakers and cooperative deadlines;
+- normalized observations, health checks and scope diagnostics.
+
+Shared production state belongs in atomic Redis/database/broker adapters. The
+included memory stores are bounded and intended for development and tests.
+
+## OpenAPI and generated clients
+
+```php
+$app->post('/users', [UserController::class, 'store'])
+    ->name('users.store')
+    ->summary('Create a user')
+    ->tags(['Users'])
+    ->input(StoreUserRequest::class)
+    ->output(UserResource::class);
+
+$contract = $app->openApi('My API', '1.0.0');
+$openapi = $contract->toJson();
+$typescript = $contract->client(ClientLanguage::TypeScript);
+$kotlin = $contract->client(ClientLanguage::Kotlin);
+$swift = $contract->client(ClientLanguage::Swift);
+```
+
+`CompatibilityChecker` reports breaking path and operation removals using
+sequential integer codes.
+
+## In-memory testing
+
+```php
+(new TestClient($app))
+    ->postJson('/login', ['email' => 'dev@pam.dev'])
+    ->assertStatus(200)
+    ->assertJsonPath('data.status', 1);
+```
+
+Run `composer benchmark` for the standalone router benchmark.
+
 ## License
 
 Free and open-source under the [Apache License 2.0](LICENSE). You may use,

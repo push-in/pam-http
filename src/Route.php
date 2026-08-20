@@ -15,6 +15,20 @@ final class Route
 
     public ?string $name = null;
 
+    public ?string $summary = null;
+
+    /** @var list<string> */
+    public array $tags = [];
+
+    /** @var class-string|null */
+    public ?string $input = null;
+
+    /** @var class-string|null */
+    public ?string $output = null;
+
+    /** @var callable|class-string|array{class-string, non-empty-string}|null */
+    public mixed $sourceHandler = null;
+
     /** @param list<string> $parameterNames */
     public function __construct(
         public string $method,

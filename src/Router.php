@@ -4,8 +4,18 @@ declare(strict_types=1);
 
 namespace Pam\Api;
 
+use Pam\Api\Container\Container;
+
 final class Router
 {
+    public function __construct(private readonly ?Container $container = null)
+    {
+    }
+
+    public function container(): Container
+    {
+        return $this->container ?? throw new \LogicException('Router has no application container.');
+    }
     /** @var list<Route> */
     private array $routes = [];
 

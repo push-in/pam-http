@@ -56,7 +56,7 @@ and route parameters by name.
 
 ## Current implementation status
 
-The `feat/api-2-foundation` development line currently implements:
+The `feat/api-2-foundation` development line implements:
 
 - class-and-method controller handlers;
 - constructor and method dependency injection;
@@ -67,8 +67,19 @@ The `feat/api-2-foundation` development line currently implements:
 - Form Request authorization/validation and integer enum validation;
 - Problem Details validation responses;
 - JSON Resources and Resource Collections;
-- PHPUnit and PHPStan level 9 verification.
-- pluggable rate-limit stores with a bounded in-memory token bucket fallback.
+- PHPUnit and PHPStan level 9 verification;
+- pluggable rate-limit stores with a bounded in-memory token bucket fallback;
+- authenticators, request-scoped principals, abilities and authorization;
+- idempotency and response-cache stores with bounded memory implementations;
+- route model binding and custom binding resolvers;
+- OpenAPI 3.1, compatibility checks and TypeScript/Kotlin/Swift clients;
+- request-scoped tenancy and normalized request observations;
+- transactions, events, bounded jobs, retry and circuit-breaker primitives;
+- strict CORS, trusted-proxy IP resolution and cooperative deadlines;
+- composable health checks and container-scope diagnostics;
+- an in-memory test client with fluent response assertions;
+- a reproducible router benchmark.
 
-Remaining tracks will land behind stable contracts with tests before they are
-documented as production-ready.
+Redis, database, queue, JWT and OpenTelemetry adapters intentionally remain
+application/ecosystem integrations. The core defines their contracts and ships
+bounded memory implementations only where safe for development and tests.

@@ -35,6 +35,16 @@ abstract class FormRequest
         return $this->validated[$key] ?? $default;
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $class
+     * @return T
+     */
+    final public function dto(string $class): object
+    {
+        return (new DtoHydrator())->hydrate($class, $this->validated);
+    }
+
     /** @return array<string, mixed> */
     private function validate(): array
     {
@@ -87,4 +97,3 @@ abstract class FormRequest
         };
     }
 }
-
