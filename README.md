@@ -1,4 +1,4 @@
-# PAM API
+# PAM HTTP
 
 Express-like routing. Laravel-like application structure. PAM-native execution.
 
@@ -6,9 +6,26 @@ Express-like routing. Laravel-like application structure. PAM-native execution.
 [PAM introduction](https://push-in.github.io/pam-docs/introduction/) ·
 [Report an issue](https://github.com/push-in/pam-http/issues)**
 
+## Start here
+
+PAM HTTP is a Composer framework that runs on the PAM Runtime. Install and
+verify PAM before adding this package:
+
 ```bash
+curl --proto '=https' --proto-redir '=https' --tlsv1.2 \
+    --connect-timeout 15 --max-time 60 --max-filesize 1048576 -fsSL \
+    https://github.com/push-in/pam/releases/latest/download/install.sh | sh
+
+pam doctor
+pam init my-app --template http
+cd my-app
 pam composer require pushinbr/pam-http
+pam dev
 ```
+
+`pam composer` uses PAM's verified private Composer toolchain while preserving
+the normal `composer.json`, `composer.lock`, and `vendor` workflow. Existing PAM
+projects can run only the `pam composer require` and `pam doctor` steps.
 
 ```php
 use Pam\App;

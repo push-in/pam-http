@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aee5ffae5417c0b267105094e1e9626a",
+    "content-hash": "6d604819fb2b9fc2c8c3c842b80e67b3",
     "packages": [
         {
-            "name": "pushinbr/pam-core-api",
-            "version": "v1.0.2",
+            "name": "pushinbr/pam-contracts",
+            "version": "v1.1.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/push-in/pam-core-api.git",
-                "reference": "67de4c55b9c0ca6f14c1f61dbd1a575b0b68f48a"
+                "url": "https://github.com/push-in/pam-contracts.git",
+                "reference": "8a06b88a29e4f2e708c6b5d1b1fa311758428d4d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/push-in/pam-core-api/zipball/67de4c55b9c0ca6f14c1f61dbd1a575b0b68f48a",
-                "reference": "67de4c55b9c0ca6f14c1f61dbd1a575b0b68f48a",
+                "url": "https://api.github.com/repos/push-in/pam-contracts/zipball/8a06b88a29e4f2e708c6b5d1b1fa311758428d4d",
+                "reference": "8a06b88a29e4f2e708c6b5d1b1fa311758428d4d",
                 "shasum": ""
             },
             "require": {
@@ -43,9 +43,9 @@
             ],
             "support": {
                 "issues": "https://github.com/push-in/pam/issues",
-                "source": "https://github.com/push-in/pam-core-api"
+                "source": "https://github.com/push-in/pam-contracts"
             },
-            "time": "2026-08-10T23:21:29+00:00"
+            "time": "2026-08-21T23:32:15+00:00"
         }
     ],
     "packages-dev": [
