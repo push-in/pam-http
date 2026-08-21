@@ -2,12 +2,12 @@
 
 Express-like routing. Laravel-like application structure. PAM-native execution.
 
-**[Official documentation](https://push-in.github.io/pam-docs/packages/api/) ·
+**[Official documentation](https://push-in.github.io/pam-docs/packages/http/) ·
 [PAM introduction](https://push-in.github.io/pam-docs/introduction/) ·
-[Report an issue](https://github.com/push-in/pam-api/issues)**
+[Report an issue](https://github.com/push-in/pam-http/issues)**
 
 ```bash
-pam composer require pushinbr/pam-api
+pam composer require pushinbr/pam-http
 ```
 
 ```php
@@ -174,7 +174,7 @@ modify, and distribute this package for any purpose, including commercially.
 
 ## Recommended PAM workflow
 
-Start new applications with `pam init my-api --template api`. In an existing PAM project, install the higher-level router with `pam composer require pushinbr/pam-api`; PAM runs Composer inside its private Embed SAPI.
+Start new applications with `pam init my-api --template api`. In an existing PAM project, install the higher-level router with `pam composer require pushinbr/pam-http`; PAM runs Composer inside its private Embed SAPI.
 
 Run `pam doctor` after dependency changes and before creating a release. The project remains a normal Composer project with a standard manifest, lockfile, PSR-4 autoloading, and `vendor/autoload.php`.
 
@@ -210,6 +210,6 @@ Route parameters are available through `$request->route()`. A path that exists f
 - [PAM introduction](https://push-in.github.io/pam-docs/introduction/)
 - [Package ecosystem](https://push-in.github.io/pam-docs/packages/overview/)
 - [Runtime compatibility](https://push-in.github.io/pam-docs/runtime/compatibility/)
-- [Report an issue](https://github.com/push-in/pam-api/issues)
+- [Report an issue](https://github.com/push-in/pam-http/issues)
 
 Report security vulnerabilities through GitHub private vulnerability reporting or the PAM security policy, not a public issue.
