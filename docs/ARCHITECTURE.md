@@ -25,16 +25,16 @@ checking the production dependency set.
 | Package | Responsibility |
 | --- | --- |
 | `pushinbr/pam-http` | HTTP kernel, router, middleware pipeline, lifecycle, errors, streaming |
-| `pushinbr/pam-container` | Optional dependency injection implementation |
-| `pushinbr/pam-validation` | Validation rules, form requests, typed DTO hydration |
-| `pushinbr/pam-auth` | Authentication and authorization contracts and strategies |
-| `pushinbr/pam-session` | Cookies, encrypted sessions, CSRF protection |
-| `pushinbr/pam-openapi` | OpenAPI generation, compatibility checks, client generation |
-| `pushinbr/pam-observability` | OpenTelemetry tracing, metrics, logging integration |
-| `pushinbr/pam-testing` | In-process client, assertions, fixtures, protocol conformance |
-| `pushinbr/pam-eloquent` | Eloquent lifecycle, migrations, tenancy, query budgets |
+| `pushinbr/pam-http-container` | Optional HTTP dependency injection implementation |
+| `pushinbr/pam-http-validation` | HTTP validation, form requests, typed DTO hydration |
+| `pushinbr/pam-http-auth` | HTTP authentication and authorization strategies |
+| `pushinbr/pam-http-session` | Cookies, encrypted sessions, CSRF protection |
+| `pushinbr/pam-http-openapi` | OpenAPI generation, compatibility checks, client generation |
+| `pushinbr/pam-http-observability` | HTTP OpenTelemetry tracing, metrics, logging integration |
+| `pushinbr/pam-http-testing` | In-process HTTP client, assertions, protocol conformance |
+| `pushinbr/pam-http-eloquent` | HTTP-aware Eloquent lifecycle, tenancy, query budgets |
 | `pushinbr/pam-jobs` | Job contracts, codecs, dispatchers, workers |
-| `pushinbr/pam-psr` | PSR-7, PSR-15 and PSR-17 adapters |
+| `pushinbr/pam-http-psr` | PSR-7, PSR-15 and PSR-17 HTTP adapters |
 
 WebSockets are owned by `pushinbr/pam-socket`; HTTP owns only the upgrade boundary. SSE and
 HTTP streaming stay in PAM HTTP because they use the normal HTTP response lifecycle.
@@ -49,3 +49,13 @@ migration path exists.
 Every public-contract change must pass the API compatibility gate. Every hot-path change must pass
 the router budget. A production install must pass a separate smoke test with development and
 suggested packages absent.
+
+## Naming rule
+
+Repository names and Composer package names use the same product family. An extension that only
+makes sense with PAM HTTP is named `pam-http-*`; an extension owned by PAM Native is named
+`pam-native-*`. A short `pam-*` name is reserved for a capability that is genuinely independent
+from every product kernel. PHP namespaces mirror ownership, such as `Pam\Http\Auth`.
+
+`pam-api` is not a product name or package prefix. Public communication, commands, templates, and
+documentation call this product **PAM HTTP**.
