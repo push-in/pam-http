@@ -22,7 +22,11 @@
     },
     "require": {
         "php": "^8.4",
-        "pushinbr/pam-contracts": "^1.0"
+        "illuminate/database": "^13.0",
+        "illuminate/events": "^13.0",
+        "illuminate/filesystem": "^13.0",
+        "illuminate/pagination": "^13.0",
+        "pushinbr/pam-contracts": "^1.1"
     },
     "suggest": {
         "pushinbr/pam-psr": "PSR-7, PSR-15 and PSR-17 interoperability.",
@@ -46,10 +50,17 @@
     },
     "scripts": {
         "analyse": "phpstan analyse --configuration=phpstan.neon --memory-limit=1G",
+        "api:compat": "bin/api-compat check",
+        "docs:check": "bin/api-reference --check",
+        "docs:generate": "bin/api-reference --write",
         "benchmark": "php benchmarks/router.php",
+        "benchmark:check": "php benchmarks/router.php --assert",
         "test": "phpunit --configuration=phpunit.xml",
         "verify": [
             "@analyse",
+            "@api:compat",
+            "@docs:check",
+            "@benchmark:check",
             "@test"
         ]
     },
