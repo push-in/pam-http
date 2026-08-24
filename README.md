@@ -1,4 +1,48 @@
+<!-- pam:product-page:start -->
+<div align="center">
+
 # PAM HTTP
+
+**Express-like routing. Laravel-like structure. PAM-native execution.**
+
+A typed HTTP application layer with routing, middleware, dependency injection, validation, resources, streaming, OpenAPI, and production lifecycle controls.
+
+[![Release](https://img.shields.io/github/v/release/push-in/pam-http?style=flat-square&label=stable)](https://github.com/push-in/pam-http/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/push-in/pam-http/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/push-in/pam-http/actions)
+![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?style=flat-square&logo=php&logoColor=white)
+![License](https://img.shields.io/github/license/push-in/pam-http?style=flat-square)
+
+**[Documentation](https://push-in.github.io/pam-docs/packages/http/) · [Why this exists](#why-this-exists) · [What you can build](#what-you-can-build) · [Quick start](#quick-start) · [Issues](https://github.com/push-in/pam-http/issues)**
+
+</div>
+
+---
+
+## Why this exists
+
+A typed HTTP application layer with routing, middleware, dependency injection, validation, resources, streaming, OpenAPI, and production lifecycle controls.
+
+| | |
+| --- | --- |
+| **Role** | HTTP framework |
+| **Execution path** | Persistent PHP · PAM transport |
+| **This repository owns** | HTTP routing and application structure |
+| **Boundary** | PAM owns the runtime; databases and framework integrations stay optional |
+
+## What you can build
+
+- Typed JSON APIs and backend services
+- Streaming and event-driven HTTP endpoints
+- Structured applications with controllers, services, repositories, and resources
+
+## Quick start
+
+```bash
+pam composer require pushinbr/pam-http
+```
+
+The **[PAM documentation](https://push-in.github.io/pam-docs/packages/http/)** covers prerequisites, production setup, and the complete workflow. PAM projects keep normal manifests and lockfiles; product features stay in the package that owns them.
+<!-- pam:product-page:end -->
 
 Express-like routing. Laravel-like application structure. PAM-native execution.
 
@@ -8,15 +52,7 @@ Express-like routing. Laravel-like application structure. PAM-native execution.
 [Architecture](docs/ARCHITECTURE.md) ·
 [Report an issue](https://github.com/push-in/pam-http/issues)**
 
-## Start here
-
-PAM HTTP is a Composer package for the PAM runtime; it is not a standalone
-server. [Install PAM](https://push-in.github.io/pam-docs/getting-started/installation/)
-first, open your application directory, and let PAM run Composer for you:
-
-```bash
-pam composer require pushinbr/pam-http
-```
+## See it in action
 
 ```php
 use Pam\App;
@@ -31,21 +67,6 @@ $app->get('/users/{id}', [UserController::class, 'show'])
     ->name('users.show');
 
 $app->listen(3000);
-```
-
-Controllers are resolved through the container. Both constructor dependencies
-and action parameters are injected:
-
-```php
-final readonly class LoginController
-{
-    public function __construct(private LoginService $login) {}
-
-    public function onLogin(LoginRequest $request): AuthResource
-    {
-        return new AuthResource($this->login->handle($request->validated()));
-    }
-}
 ```
 
 ## Eloquent ORM (optional)
