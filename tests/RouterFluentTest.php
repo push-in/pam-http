@@ -99,6 +99,20 @@ final class RouterFluentTest extends TestCase
         self::assertSame('', $result['body']);
     }
 
+    public function testExplicitDynamicHeadRouteWinsBeforeGetFallback(): void
+    {
+        $app = new App(discoverPackages: false);
+        $app->get('/reports/{id}', static fn (Request $request, Response $response): Response =>
+            $response->header('x-handler', 'get')->send('get'));
+        $app->head('/reports/{id}', static fn (Request $request, Response $response): Response =>
+            $response->header('x-handler', 'head')->send('head'));
+
+        $result = $app->handle($this->request('HEAD', '/reports/42'), new Response())->export();
+
+        self::assertSame(['head'], $result['headers']['x-handler']);
+        self::assertSame('', $result['body']);
+    }
+
     private function request(string $method, string $path): Request
     {
         return new Request($method, $path, [], [], '');

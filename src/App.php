@@ -54,11 +54,15 @@ final class App implements ApplicationInterface
 
     private bool $frozen = false;
 
+    /** @var \WeakMap<\Pam\Api\Route, \Pam\Contracts\Http\RequestHandlerInterface> */
+    private \WeakMap $compiledRoutes;
+
     /** @var list<RequestLifecycleObserver> */
     private array $observers = [];
 
     public function __construct(bool $discoverPackages = true, ?Container $container = null)
     {
+        $this->compiledRoutes = new \WeakMap();
         $this->container = $container ?? new Container();
         $this->router = new Router($this->container);
         $this->handlerResolver = new HandlerResolver($this->container);
@@ -355,11 +359,8 @@ final class App implements ApplicationInterface
         $route = $result->route ?? throw new \LogicException('A matched route must contain a handler.');
         $this->container->scopedInstance(\Pam\Api\Route::class, $route);
         $request = $request->withRouteParameters($result->parameters);
-        $destination = new CallableRequestHandler($route->handler);
-        if ($route->middleware === []) {
-            return $destination->handle($request, $response);
-        }
-        return (new Pipeline($route->middleware, $destination))->handle($request, $response);
+        $handler = $this->compiledRoutes[$route] ??= self::compileRoute($route);
+        return $handler->handle($request, $response);
     }
 
     private function freeze(): void
@@ -370,11 +371,22 @@ final class App implements ApplicationInterface
         foreach ($this->providers as $provider) {
             $provider->boot($this);
         }
+        foreach ($this->router->routes() as $route) {
+            $this->compiledRoutes[$route] = self::compileRoute($route);
+        }
         $this->pipeline = new Pipeline(
             $this->middleware,
             new CallableRequestHandler($this->dispatchRoute(...)),
         );
         $this->frozen = true;
+    }
+
+    private static function compileRoute(\Pam\Api\Route $route): \Pam\Contracts\Http\RequestHandlerInterface
+    {
+        $destination = new CallableRequestHandler($route->handler);
+        return $route->middleware === []
+            ? $destination
+            : new Pipeline($route->middleware, $destination);
     }
 
     private function assertMutable(): void

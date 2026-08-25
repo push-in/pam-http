@@ -23,6 +23,12 @@ final class Container
     /** @var array<class-string, \Closure(string, Container): object> */
     private array $routeBindings = [];
 
+    /** @var array<class-string, array{0: \ReflectionClass<object>, 1: list<\ReflectionParameter>}> */
+    private array $constructorPlans = [];
+
+    /** @var array<string, array{0: \ReflectionMethod, 1: list<\ReflectionParameter>}> */
+    private array $methodPlans = [];
+
     public function __construct()
     {
         $this->fiberScopes = new \WeakMap();
@@ -143,25 +149,65 @@ final class Container
      */
     public function call(array $callable, array $named = [], array $provided = []): mixed
     {
-        $reflection = new \ReflectionMethod($callable[0], $callable[1]);
-        $arguments = $this->resolveParameters($reflection->getParameters(), $named, $provided);
+        $key = $callable[0]::class . '::' . $callable[1];
+        [$reflection, $parameters] = $this->methodPlan($key, $callable[0], $callable[1]);
+        $arguments = $this->resolveParameters($parameters, $named, $provided);
         return $reflection->invokeArgs($callable[0], $arguments);
     }
 
     /** @param class-string $class */
     private function build(string $class): object
     {
-        $reflection = new \ReflectionClass($class);
+        [$reflection, $parameters] = $this->constructorPlan($class);
         if (!$reflection->isInstantiable()) {
             throw new \RuntimeException("Container entry {$class} is not instantiable.");
         }
-        $constructor = $reflection->getConstructor();
-        if ($constructor === null) {
+        if ($parameters === []) {
             return $reflection->newInstance();
         }
         return $reflection->newInstanceArgs(
-            $this->resolveParameters($constructor->getParameters()),
+            $this->resolveParameters($parameters),
         );
+    }
+
+    /**
+     * @param class-string $class
+     * @return array{0: \ReflectionClass<object>, 1: list<\ReflectionParameter>}
+     */
+    private static function compileConstructor(string $class): array
+    {
+        /** @var \ReflectionClass<object> $reflection */
+        $reflection = new \ReflectionClass($class);
+        $constructor = $reflection->getConstructor();
+        return [$reflection, $constructor === null ? [] : $constructor->getParameters()];
+    }
+
+    /** @return array{0: \ReflectionMethod, 1: list<\ReflectionParameter>} */
+    private static function compileMethod(object $target, string $method): array
+    {
+        $reflection = new \ReflectionMethod($target, $method);
+        return [$reflection, $reflection->getParameters()];
+    }
+
+    /**
+     * @param class-string $class
+     * @return array{0: \ReflectionClass<object>, 1: list<\ReflectionParameter>}
+     */
+    private function constructorPlan(string $class): array
+    {
+        if (isset($this->constructorPlans[$class])) {
+            return $this->constructorPlans[$class];
+        }
+        return $this->constructorPlans[$class] = self::compileConstructor($class);
+    }
+
+    /** @return array{0: \ReflectionMethod, 1: list<\ReflectionParameter>} */
+    private function methodPlan(string $key, object $target, string $method): array
+    {
+        if (isset($this->methodPlans[$key])) {
+            return $this->methodPlans[$key];
+        }
+        return $this->methodPlans[$key] = self::compileMethod($target, $method);
     }
 
     /**
