@@ -38,6 +38,9 @@ final class Router
     /** @var list<Route> */
     private array $dynamicRoutes = [];
 
+    /** @var array<string, list<Route>> */
+    private array $dynamicRoutesByMethod = [];
+
     /** @var array<string, true> */
     private array $signatures = [];
 
@@ -82,6 +85,7 @@ final class Router
             $this->staticRoutes[self::normalizeStaticPath($path)][$method] = $route;
         } else {
             $this->dynamicRoutes[] = $route;
+            $this->dynamicRoutesByMethod[$method][] = $route;
         }
         $this->signatures[$signature] = true;
         return $route;
@@ -129,30 +133,41 @@ final class Router
         $method = strtoupper($method);
         $allowedMethods = [];
 
-        $static = $this->staticRoutes[self::normalizeStaticPath($path)] ?? [];
+        $static = $this->staticRoutes[$path]
+            ?? ($path !== '/' && str_ends_with($path, '/')
+                ? ($this->staticRoutes[rtrim($path, '/')] ?? [])
+                : []);
         $staticRoute = $static[$method] ?? ($method === 'HEAD' ? ($static['GET'] ?? null) : null);
         if ($staticRoute instanceof Route) {
             return new RoutingResult(RoutingResultType::Found, $staticRoute);
         }
         $allowedMethods = array_keys($static);
 
+        $candidateMethods = $method === 'HEAD' ? ['HEAD', 'GET'] : [$method];
+        foreach ($candidateMethods as $candidateMethod) {
+            foreach ($this->dynamicRoutesByMethod[$candidateMethod] ?? [] as $route) {
+                $matches = [];
+                if (preg_match($route->pattern, $path, $matches) !== 1) {
+                    continue;
+                }
+
+                $parameters = [];
+                foreach ($route->parameterNames as $name) {
+                    $value = $matches[$name] ?? '';
+                    $parameters[$name] = str_contains($value, '%') ? rawurldecode($value) : $value;
+                }
+
+                return new RoutingResult(RoutingResultType::Found, $route, $parameters);
+            }
+        }
+
         foreach ($this->dynamicRoutes as $route) {
-            $matches = [];
-            if (preg_match($route->pattern, $path, $matches) !== 1) {
+            if (in_array($route->method, $candidateMethods, true)) {
                 continue;
             }
-
-            if ($route->method !== $method && !($method === 'HEAD' && $route->method === 'GET')) {
+            if (preg_match($route->pattern, $path) === 1) {
                 $allowedMethods[] = $route->method;
-                continue;
             }
-
-            $parameters = [];
-            foreach ($route->parameterNames as $name) {
-                $parameters[$name] = rawurldecode($matches[$name] ?? '');
-            }
-
-            return new RoutingResult(RoutingResultType::Found, $route, $parameters);
         }
 
         if ($allowedMethods !== []) {

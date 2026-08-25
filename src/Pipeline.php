@@ -18,18 +18,9 @@ final class Pipeline implements RequestHandlerInterface
     {
         $next = $destination;
         foreach (array_reverse($middleware) as $layer) {
-            $downstream = $next;
-            $next = new CallableRequestHandler(
-                static function (Request $request, Response $response) use ($layer, $downstream): Response {
-                    $result = $layer instanceof MiddlewareInterface
-                        ? $layer->process($request, $response, $downstream)
-                        : $layer($request, $response, $downstream);
-                    if (!$result instanceof Response) {
-                        throw new \UnexpectedValueException('Pam middleware must return Pam\\Http\\Response.');
-                    }
-                    return $result;
-                },
-            );
+            $next = $layer instanceof MiddlewareInterface
+                ? new CompiledMiddlewareHandler($layer, $next)
+                : new CompiledCallableMiddlewareHandler($layer, $next);
         }
         $this->compiled = $next;
     }

@@ -14,6 +14,9 @@ A typed HTTP application layer with routing, middleware, dependency injection, v
 
 **[Documentation](https://push-in.github.io/pam-docs/packages/http/) · [Why this exists](#why-this-exists) · [What you can build](#what-you-can-build) · [Quick start](#quick-start) · [Issues](https://github.com/push-in/pam-http/issues)**
 
+[Performance contract](docs/PERFORMANCE.md): compiled hot paths and enforced
+throughput, tail-latency, startup, and memory budgets.
+
 </div>
 
 ---

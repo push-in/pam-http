@@ -3,6 +3,21 @@
 All notable PAM API changes are documented here. The package follows Semantic
 Versioning and the compatibility policy in [UPGRADE.md](UPGRADE.md).
 
+## 2.1.0 - 2026-08-24
+
+### Added
+
+- a reproducible kernel benchmark with throughput, p50/p95/p99, startup and
+  peak-memory budgets enforced by the normal verification workflow.
+
+### Changed
+
+- compile static and method-indexed dynamic route tables when routes register;
+- compile middleware chains once instead of allocating closures per request;
+- cache dependency-injection constructor and method parameter plans;
+- compile route middleware at application freeze and reuse JSON resource loops;
+- prefer explicit dynamic `HEAD` routes before the automatic `GET` fallback.
+
 ## 2.0.1 - 2026-08-22
 
 ### Changed
