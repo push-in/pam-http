@@ -3,6 +3,12 @@
 
 # PAM HTTP
 
+> **Mandatory build hygiene:** every local, CI, benchmark, and release build
+> must remove project-scoped regenerable outputs after success or failure.
+> Source, Composer dependencies, and declared evidence are retained. Native
+> consumers inherit PAM's Gradle/Xcode/Rust cleanup contract; this package never
+> deletes another package's artifacts or requires PAM Native.
+
 **Express-like routing. Laravel-like structure. PAM-native execution.**
 
 A typed HTTP application layer with routing, middleware, dependency injection, validation, resources, streaming, OpenAPI, and production lifecycle controls.
