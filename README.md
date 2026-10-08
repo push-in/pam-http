@@ -191,7 +191,7 @@ modify, and distribute this package for any purpose, including commercially.
 
 ## Recommended PAM workflow
 
-Start new applications with `pam init my-api --template api`. In an existing PAM project, install the higher-level router with `pam composer require pushinbr/pam-http`; PAM runs Composer inside its private Embed SAPI.
+Start new applications with `pam init my-api --template http`. In an existing PAM project, install the higher-level router with `pam composer require pushinbr/pam-http`; PAM runs Composer inside its private Embed SAPI.
 
 Run `pam doctor` after dependency changes and before creating a release. The project remains a normal Composer project with a standard manifest, lockfile, PSR-4 autoloading, and `vendor/autoload.php`.
 
