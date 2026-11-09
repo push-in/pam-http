@@ -1,35 +1,70 @@
-<!-- pam:product-page:start -->
 <div align="center">
 
-# PAM HTTP
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.svg">
+  <img src=".github/assets/banner-light.svg" width="880" alt="pam-http: Express-like routing, Laravel-like structure, PAM-native execution.">
+</picture>
 
-> **Mandatory build hygiene:** every local, CI, benchmark, and release build
-> must remove project-scoped regenerable outputs after success or failure.
-> Source, Composer dependencies, and declared evidence are retained. Native
-> consumers inherit PAM's Gradle/Xcode/Rust cleanup contract; this package never
-> deletes another package's artifacts or requires PAM Native.
+**Typed HTTP routing and application structure for the PAM runtime.**<br>
+Routing, middleware, dependency injection, validation, resources, streaming, OpenAPI and production lifecycle controls, running in persistent PHP workers.
 
-**Express-like routing. Laravel-like structure. PAM-native execution.**
+[![Packagist](https://img.shields.io/packagist/v/pushinbr/pam-http?label=packagist&color=f53003)](https://packagist.org/packages/pushinbr/pam-http)
+[![Latest release](https://img.shields.io/github/v/release/push-in/pam-http?label=release&color=e3a008)](https://github.com/push-in/pam-http/releases/latest)
+![PHP 8.5](https://img.shields.io/badge/php-8.5-777bb4)
+[![CI](https://img.shields.io/github/actions/workflow/status/push-in/pam-http/ci.yml?branch=main&label=ci)](https://github.com/push-in/pam-http/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/push-in/pam-http?color=1f6feb)](LICENSE)
 
-A typed HTTP application layer with routing, middleware, dependency injection, validation, resources, streaming, OpenAPI, and production lifecycle controls.
-
-[![Release](https://img.shields.io/github/v/release/push-in/pam-http?style=flat-square&label=stable)](https://github.com/push-in/pam-http/releases)
-[![CI](https://img.shields.io/github/actions/workflow/status/push-in/pam-http/ci.yml?branch=main&style=flat-square&label=CI)](https://github.com/push-in/pam-http/actions)
-![PHP](https://img.shields.io/badge/PHP-8.5-777BB4?style=flat-square&logo=php&logoColor=white)
-![License](https://img.shields.io/github/license/push-in/pam-http?style=flat-square)
-
-**[Documentation](https://push-in.github.io/pam-docs/packages/http/) · [Why this exists](#why-this-exists) · [What you can build](#what-you-can-build) · [Quick start](#quick-start) · [Issues](https://github.com/push-in/pam-http/issues)**
-
-[Performance contract](docs/PERFORMANCE.md): compiled hot paths and enforced
-throughput, tail-latency, startup, and memory budgets.
+[Install](#install) · [Quick example](#quick-example) · [Features](#features) · [Docs](#docs) · [Issues](https://github.com/push-in/pam-http/issues)
 
 </div>
 
----
+<a id="install"></a>
+## <picture><img src=".github/assets/icons/terminal.svg" width="22" height="22" alt=""></picture> Install
 
-## Why this exists
+Start a new API with the HTTP template, which already requires `pushinbr/pam-http`:
 
-A typed HTTP application layer with routing, middleware, dependency injection, validation, resources, streaming, OpenAPI, and production lifecycle controls.
+```sh
+pam init my-api --template http
+cd my-api
+pam dev
+```
+
+In an existing PAM project, add the router with `pam composer require pushinbr/pam-http`; PAM runs Composer inside its private Embed SAPI. Run `pam doctor` after dependency changes and before creating a release. The project remains a normal Composer project with a standard manifest, lockfile, PSR-4 autoloading, and `vendor/autoload.php`.
+
+<a id="quick-example"></a>
+## <picture><img src=".github/assets/icons/code.svg" width="22" height="22" alt=""></picture> Quick example
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Pam\Api\RouteConstraint;
+use Pam\App;
+use Pam\Http\Request;
+use Pam\Http\Response;
+
+$app = new App;
+
+$app->get('/api/ping', static fn (Request $request, Response $response): Response => $response->json([
+    'message' => 'pong',
+]));
+
+$app->get('/users/{id}', [UserController::class, 'show'])
+    ->where('id', RouteConstraint::Integer)
+    ->name('users.show');
+
+$app->listen((int) (getenv('PAM_PORT') ?: 3000));
+```
+
+Route parameters are available through `$request->route()`. A path that exists for another method produces 405 behavior; an unknown path produces 404 behavior. Register error handling with `onError()` and keep transport-level timeouts and request limits in the PAM listener options.
+
+<a id="what-you-can-build"></a>
+## <picture><img src=".github/assets/icons/sparkle.svg" width="22" height="22" alt=""></picture> What you can build
+
+- Typed JSON APIs and backend services
+- Streaming and event-driven HTTP endpoints
+- Structured applications with controllers, services, repositories, and resources
 
 | | |
 | --- | --- |
@@ -38,407 +73,26 @@ A typed HTTP application layer with routing, middleware, dependency injection, v
 | **This repository owns** | HTTP routing and application structure |
 | **Boundary** | PAM owns the runtime; databases and framework integrations stay optional |
 
-## What you can build
-
-- Typed JSON APIs and backend services
-- Streaming and event-driven HTTP endpoints
-- Structured applications with controllers, services, repositories, and resources
-
-## Quick start
-
-```bash
-pam composer require pushinbr/pam-http
-```
-
-The **[PAM documentation](https://push-in.github.io/pam-docs/packages/http/)** covers prerequisites, production setup, and the complete workflow. PAM projects keep normal manifests and lockfiles; product features stay in the package that owns them.
-<!-- pam:product-page:end -->
-
-Express-like routing. Laravel-like application structure. PAM-native execution.
-
-**[Official documentation](https://push-in.github.io/pam-docs/packages/http/) ·
-[PAM introduction](https://push-in.github.io/pam-docs/introduction/) ·
-[Upgrade guide](UPGRADE.md) · [Changelog](CHANGELOG.md) ·
-[Architecture](docs/ARCHITECTURE.md) ·
-[Report an issue](https://github.com/push-in/pam-http/issues)**
-
-## See it in action
-
-```php
-use Pam\App;
-use Pam\Api\RouteConstraint;
-
-$app = new App();
-
-$app->post('/login', [LoginController::class, 'onLogin']);
-
-$app->get('/users/{id}', [UserController::class, 'show'])
-    ->where('id', RouteConstraint::Integer)
-    ->name('users.show');
-
-$app->listen(3000);
-```
-
-## Eloquent ORM (optional)
-
-PAM HTTP keeps its kernel independent from any database. Install Eloquent only
-when the application needs the legacy built-in integration:
-
-```bash
-pam composer require illuminate/database illuminate/events illuminate/filesystem illuminate/pagination
-```
-
-The integration
-keeps a separate connection manager per request Fiber, so connections,
-transactions and mutable database state cannot leak between persistent-worker
-requests.
-
-```php
-use Pam\Api\Database\DatabaseConfig;
-use Pam\Api\Database\EloquentServiceProvider;
-
-$app->provider(new EloquentServiceProvider(DatabaseConfig::fromEnvironment()));
-```
-
-Configure `DB_CONNECTION` (`pgsql`, `mysql`, `sqlite` or `sqlsrv`) and the
-usual `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`
-variables. PostgreSQL is the production default; SQLite is convenient for
-tests. Models are ordinary `Illuminate\Database\Eloquent\Model` classes.
-
-```php
-final class User extends \Illuminate\Database\Eloquent\Model
-{
-    protected $fillable = ['name', 'email'];
-}
-```
-
-Resolve `EloquentManager` when a service needs an explicit connection, schema
-builder or transaction. Request cleanup automatically rolls back unfinished
-transactions and disconnects every configured connection. Register
-`DatabaseHealthCheck` in a `HealthRegistry` for readiness checks; its result
-reports latency and failure class without exposing credentials.
-
-Laravel-compatible anonymous-class migrations work through
-`MigrationManager::migrate()` and `rollback()`. The manager creates the
-migration repository on first use and supports dry-run execution, named
-connections and bounded step rollbacks.
-
-Use `QueryBudgetMiddleware` during development and in performance-sensitive
-routes to cap query count, accumulated database time and repeated SQL patterns:
-
-```php
-$app->middleware(new QueryBudgetMiddleware(
-    monitor: $app->container()->get(QueryMonitor::class),
-    budget: new QueryBudget(
-        maximumQueries: 30,
-        maximumElapsedMilliseconds: 100,
-        maximumDuplicateQueries: 3,
-    ),
-    failOnViolation: true,
-));
-```
-
-Budgets are Fiber-local. Violations use the sequential integer-backed
-`QueryBudgetViolation` enum, making them stable for CI reports and telemetry.
-
-Tenant-owned models can be protected once during application boot:
-
-```php
-$tenancy = $app->container()->get(TenantModelGuard::class);
-$tenancy->protect(Order::class); // defaults to tenant_id
-```
-
-The guard adds an Eloquent global scope and assigns the tenant key on create.
-It fails closed when no request-scoped `TenantContext` exists and rejects a
-model explicitly assigned to another tenant. Use an unguarded administrative
-model only for deliberate cross-tenant operations.
-
-## Route groups
-
-```php
-$app->prefix('/api/v1')
-    ->middleware(Authenticate::class)
-    ->group(function (RouteRegistrar $routes): void {
-        $routes->apiResource('/users', UserController::class);
-        $routes->post('/login', [LoginController::class, 'onLogin']);
-    });
-```
-
-Global, group and route middleware use the same PAM middleware contract.
-
-`head()` and `options()` are available on both `App` and `RouteRegistrar`.
-When no explicit `OPTIONS` route exists, PAM returns `204` with a deterministic
-`Allow` header; every `GET` route automatically advertises and matches `HEAD`.
-PAM suppresses the final `HEAD` body after middleware and error handling while
-preserving its status and headers. An explicit `OPTIONS` or `HEAD` handler
-always takes precedence.
-
-Router configuration is bounded before the application freezes: 10,000 routes
-by default (configurable up to 100,000), 2 KiB paths, 128 segments, 32 route
-parameters and 512-byte custom constraints. Compiled patterns carry PCRE match
-and depth budgets, and oversized untrusted request paths bypass PCRE entirely.
-
-## Container lifetimes
-
-```php
-$app->container()->bind(UserRepository::class, DatabaseUserRepository::class);
-$app->container()->singleton(Cache::class, RedisCache::class);
-$app->container()->scoped(CurrentUser::class);
-```
-
-`scoped` values are created once per request and discarded even when the
-handler throws. This boundary is essential for PAM's persistent workers.
-
-## Typed configuration
-
-Define configuration once and fail during boot when required environment is
-missing or malformed:
-
-```php
-$config = Configuration::fromEnvironment([
-    new ConfigDefinition('app.port', 'PAM_PORT', ConfigType::Integer),
-    new ConfigDefinition('auth.secret', 'AUTH_SECRET', sensitive: true),
-]);
-
-$port = $config->integer('app.port');
-```
-
-Supported types are represented by the sequential integer-backed `ConfigType`
-enum. Diagnostics should use `$config->redacted()`, which deterministically
-masks sensitive values. Validation errors name the variable and expected type
-without including its supplied value.
-
-## Validation and resources
-
-```php
-final class LoginRequest extends FormRequest
-{
-    public function rules(): array
-    {
-        return [
-            'email' => ['required', 'string', 'email'],
-            'type' => ['required', Rule::enum(UserType::class)],
-        ];
-    }
-}
-
-enum UserType: int
-{
-    case Regular = 1;
-    case Administrator = 2;
-}
-```
-
-Return a `JsonResource` from a handler to receive a consistent `data` envelope.
-Validation failures use Problem Details with stable sequential integer codes.
-
-### Problem Details
-
-Routing failures, `HttpException` instances and unexpected exceptions use one
-safe Problem Details envelope with `application/problem+json`:
-
-```json
-{"type":"https://pam.dev/problems/5","title":"Version conflict.","status":409,"code":5}
-```
-
-Exception details may add domain fields but cannot replace `type`, `title`,
-`status` or `code`. Unexpected exception messages are logged and never returned
-to the client. `405` responses retain their deterministic `Allow` header and
-use the sequential `MethodNotAllowed=9` problem code.
-
-## Quality gate
-
-```bash
-composer install
-composer verify
-```
-
-The verification gate runs PHPStan at level 9 and the PHPUnit suite on every
-supported PHP version. It also compares all public classes, interfaces, enums,
-methods, parameters, properties and constants against `api-surface.json`:
-
-```bash
-composer api:compat
-```
-
-The gate rejects unreviewed additions as baseline drift and rejects removed
-symbols/members, signature changes, new interface methods, newly abstract/final
-contracts and enum changes as incompatibilities. Run `bin/api-compat update`
-after approving a compatible public addition. A breaking baseline update is
-reserved for an intentional major version whose migration guide and changelog
-are ready.
-
-The same reviewed baseline generates the complete
-[public API reference](docs/PUBLIC-API.md). `composer verify` rejects stale
-reference output; regenerate it only after explicitly accepting compatible API
-additions:
-
-```bash
-composer docs:generate
-```
-
-See the [PAM API 2 design and delivery contract](docs/API-2.md) for the complete
-15-track implementation plan and current delivery status.
-
-## Distributed rate limiting
-
-`RateLimitMiddleware` uses a bounded in-memory token bucket by default and
-accepts any `RateLimitStore` for process-wide or distributed enforcement:
-
-```php
-$app->middleware(new RateLimitMiddleware(
-    requestsPerSecond: 20,
-    burst: 40,
-    store: $redisRateLimitStore,
-    keyResolver: static fn (Request $request): string =>
-        'token:' . $request->getHeader('authorization', 'anonymous'),
-));
-```
-
-The middleware emits limit/remaining/retry headers and a Problem Details `429`
-response. Applications behind proxies must supply a key resolver that trusts
-only their explicitly configured proxy boundary.
-
-## Signed bearer tokens
-
-`HmacTokenCodec` provides a strict HS256 access-token foundation with bounded
-token/payload sizes, constant-time signature and issuer/audience checks,
-`iat`/`nbf`/`exp` validation, unique token IDs and abilities:
-
-```php
-$tokens = new HmacTokenCodec(
-    secret: $secretFromYourSecretManager,
-    issuer: 'https://auth.example.com',
-    audience: 'orders-api',
-);
-$app->middleware(new AuthenticateMiddleware(
-    new BearerTokenAuthenticator($tokens),
-    $app->container(),
-));
-```
-
-Set `keyIdentifier` on the active signing key and pass at most four retiring
-keys through `verificationKeys` for bounded zero-downtime rotation. Unknown
-`kid` values fail closed before claims are trusted. `BearerTokenAuthenticator`
-also accepts a `TokenRevocationStore`; `MemoryTokenRevocationStore` is bounded
-and intended for development/tests, while clustered applications should back
-the contract with an atomic shared store.
-
-Signing secrets must contain at least 32 bytes and must not be stored in source
-control. Access tokens are capped at 24 hours. Refresh-token rotation,
-OAuth/OIDC authorization-server duties belong to the application
-or a dedicated identity provider; they must not be simulated with long-lived
-access tokens.
-
-## Production building blocks
-
-PAM API exposes small, replaceable contracts instead of choosing application
-infrastructure:
-
-- authenticators, principals and ability checks;
-- idempotency and response-cache stores;
-- request-scoped tenant resolution;
-- transactions, events and bounded jobs;
-- retry, circuit breakers and cooperative deadlines;
-- normalized observations, health checks and scope diagnostics.
-
-Shared production state belongs in atomic Redis/database/broker adapters. The
-included memory stores are bounded and intended for development and tests.
-
-`JobQueue` defines reservation leases, acknowledgement, delayed release and
-dead-letter transitions for durable adapters. The bounded memory implementation
-and `JobWorker` exercise the same at-least-once lifecycle in tests:
-
-```php
-$queue = new MemoryJobDispatcher();
-$queue->dispatch(new SendInvoice($invoiceId), maximumAttempts: 3);
-
-$worker = new JobWorker(
-    $queue,
-    static fn (object $job): JobOutcome => JobOutcome::Complete,
-);
-$worker->runOne();
-```
-
-Attempts increment when a lease is reserved. Expired leases can be reclaimed;
-exceptions and explicit retry outcomes release the job with a bounded delay,
-and exhausted jobs enter the dead-letter set. Only failure class names are
-retained, never exception messages that may contain application data.
-
-Cross-process adapters should encode only `SerializableJob` implementations
-through `JobCodec`. The codec uses an explicit name-to-class allowlist, a
-versioned JSON envelope, a 64 KiB size limit and a depth limit. It never accepts
-PHP serialized objects or client-supplied class names.
-
-## Request lifecycle observers
-
-Register a `RequestLifecycleObserver` with `$app->observe()` to build profilers,
-traces and leak diagnostics around the complete request pipeline. Observers
-start in registration order and finish in reverse order, receive the handled
-failure when one occurred, and execute before the request scope is destroyed.
-An observer cleanup failure is logged and cannot prevent later observers or
-container cleanup from running.
-
-`MemoryProfiler` is the bounded first PAM Lens collector. Enable it explicitly
-with `ProfilerMode::Development` or `ProfilerMode::Testing` and register it as
-an observer. It emits `X-Debug-Token` and stores only method, path, status,
-duration, memory delta and failure class; request/response bodies and headers
-are never retained. Disabled mode is the default and emits nothing.
-
-## OpenAPI and generated clients
-
-```php
-$app->post('/users', [UserController::class, 'store'])
-    ->name('users.store')
-    ->summary('Create a user')
-    ->tags(['Users'])
-    ->input(StoreUserRequest::class)
-    ->output(UserResource::class);
-
-$contract = $app->openApi('My API', '1.0.0');
-$openapi = $contract->toJson();
-$typescript = $contract->client(ClientLanguage::TypeScript);
-$kotlin = $contract->client(ClientLanguage::Kotlin);
-$swift = $contract->client(ClientLanguage::Swift);
-```
-
-`CompatibilityChecker` reports breaking path and operation removals using
-sequential integer codes.
-
-## In-memory testing
-
-```php
-(new TestClient($app))
-    ->postJson('/login', ['email' => 'dev@pam.dev'])
-    ->assertSuccessful()
-    ->assertHeader('content-type', 'application/json')
-    ->assertJsonPath('data.status', 1);
-```
-
-Use `assertJson()` for an exact payload, `assertJsonPath()` for a focused value,
-and `assertStatus()` when the endpoint intentionally returns a specific code.
-
-Run `composer benchmark` for the standalone router benchmark. Its schema 1 JSON
-reports warmed static and constrained-dynamic throughput, p50/p95/p99 latency,
-peak memory and the exact regression budget. `composer verify` runs
-`benchmark:check` with intentionally conservative ceilings to catch severe
-regressions while avoiding hardware-specific marketing claims.
-
-## License
-
-Free and open-source under the [Apache License 2.0](LICENSE). You may use,
-modify, and distribute this package for any purpose, including commercially.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute and [SECURITY.md](SECURITY.md)
-for private vulnerability reporting.
-
-
-## Recommended PAM workflow
-
-Start new applications with `pam init my-api --template api`. In an existing PAM project, install the higher-level router with `pam composer require pushinbr/pam-http`; PAM runs Composer inside its private Embed SAPI.
-
-Run `pam doctor` after dependency changes and before creating a release. The project remains a normal Composer project with a standard manifest, lockfile, PSR-4 autoloading, and `vendor/autoload.php`.
-
-## API guide
+<a id="features"></a>
+## <picture><img src=".github/assets/icons/layers.svg" width="22" height="22" alt=""></picture> Features
+
+| Area | What you get | Guide |
+| --- | --- | --- |
+| Routing | Route groups, prefixes, `apiResource`, constraints, automatic `HEAD` and `OPTIONS`, bounded router limits | [Route groups](docs/guide.md#route-groups) |
+| Container | `bind`, `singleton` and request-`scoped` lifetimes, discarded even when the handler throws | [Container lifetimes](docs/guide.md#container-lifetimes) |
+| Configuration | Typed environment definitions that fail at boot, redacted diagnostics | [Typed configuration](docs/guide.md#typed-configuration) |
+| Validation | `FormRequest` rules, `JsonResource` envelopes, Problem Details with stable integer codes | [Validation and resources](docs/guide.md#validation-and-resources) |
+| Security | Rate limiting with pluggable stores, HS256 bearer tokens with key rotation and revocation | [Rate limiting](docs/guide.md#distributed-rate-limiting), [tokens](docs/guide.md#signed-bearer-tokens) |
+| Production | Idempotency, response cache, tenancy, transactions, jobs with leases and dead letters, retries, circuit breakers | [Building blocks](docs/guide.md#production-building-blocks) |
+| Observability | Request lifecycle observers and the bounded `MemoryProfiler` | [Observers](docs/guide.md#request-lifecycle-observers) |
+| Contracts | OpenAPI output and generated TypeScript, Kotlin and Swift clients | [OpenAPI](docs/guide.md#openapi-and-generated-clients) |
+| Database (optional) | Legacy Eloquent bridge with per-Fiber connections, query budgets, tenant guard | [Eloquent ORM](docs/guide.md#eloquent-orm-optional) |
+| Testing | In-memory `TestClient` from `pushinbr/pam-http-testing` | [In-memory testing](docs/guide.md#in-memory-testing) |
+
+[Performance contract](docs/PERFORMANCE.md): compiled hot paths and enforced throughput, tail-latency, startup, and memory budgets.
+
+<a id="api-guide"></a>
+## <picture><img src=".github/assets/icons/code.svg" width="22" height="22" alt=""></picture> API guide
 
 | Surface | Use it for |
 | --- | --- |
@@ -449,9 +103,10 @@ Run `pam doctor` after dependency changes and before creating a release. The pro
 | `RateLimitMiddleware` | Apply bounded per-key request limits. |
 | `SecurityHeadersMiddleware` | Set conservative browser security headers. |
 
-Route parameters are available through `$request->route()`. A path that exists for another method produces 405 behavior; an unknown path produces 404 behavior. Register error handling with `onError()` and keep transport-level timeouts and request limits in the PAM listener options.
+The [public API reference](docs/PUBLIC-API.md) is generated from the reviewed `api-surface.json` baseline.
 
-## Production checklist
+<a id="production-checklist"></a>
+## <picture><img src=".github/assets/icons/shield.svg" width="22" height="22" alt=""></picture> Production checklist
 
 - Keep request data and mutable state scoped to the current request.
 - Test success, validation failure, exception, cancellation, and timeout paths.
@@ -459,17 +114,33 @@ Route parameters are available through `$request->route()`. A path that exists f
 - Run `pam doctor`, `pam test`, and the relevant integration suite before release.
 - Validate real dependencies and workload behavior; compatibility is not inferred from package installation alone.
 
-## Troubleshooting
+> **Build hygiene:** every local, CI, benchmark, and release build must remove project-scoped regenerable outputs after success or failure. Source, Composer dependencies, and declared evidence are retained. Native consumers inherit PAM's Gradle/Xcode/Rust cleanup contract; this package never deletes another package's artifacts or requires PAM Native.
 
-- **Class not found:** run `pam composer install`, verify PSR-4 configuration, and rerun `pam doctor`.
-- **Behavior differs over the network:** reproduce with PAM's transport integration tests; in-memory execution does not model the socket boundary.
-- **A dependency blocks a worker:** use PAM-native I/O, a compatible event loop, a process pool, or additional isolated workers.
+Troubleshooting notes are in the [guide](docs/guide.md#troubleshooting). See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute (the `composer verify` [quality gate](docs/guide.md#quality-gate)). Report security vulnerabilities through GitHub private vulnerability reporting or the PAM security policy, not a public issue.
 
-## Documentation and support
+<a id="docs"></a>
+## <picture><img src=".github/assets/icons/book.svg" width="22" height="22" alt=""></picture> Docs
 
-- [PAM introduction](https://push-in.github.io/pam-docs/introduction/)
+- [Official documentation](https://push-in.github.io/pam-docs/packages/http/)
+- [Guide](docs/guide.md): database, routing, container, configuration, validation, security, jobs, observers, OpenAPI, testing
+- [Architecture](docs/ARCHITECTURE.md)
+- [Performance contract](docs/PERFORMANCE.md)
+- [Public API reference](docs/PUBLIC-API.md)
+- [PAM API 2 design and delivery contract](docs/API-2.md)
+- [Upgrade guide](UPGRADE.md)
+- [Changelog](CHANGELOG.md)
 - [Package ecosystem](https://push-in.github.io/pam-docs/packages/overview/)
 - [Runtime compatibility](https://push-in.github.io/pam-docs/runtime/compatibility/)
-- [Report an issue](https://github.com/push-in/pam-http/issues)
 
-Report security vulnerabilities through GitHub private vulnerability reporting or the PAM security policy, not a public issue.
+<a id="pam-ecosystem"></a>
+## <picture><img src=".github/assets/icons/plug.svg" width="22" height="22" alt=""></picture> Part of the PAM ecosystem
+
+PAM runs PHP natively on servers, desktops and phones. This repository is one piece of it.
+
+| [**PAM**](https://github.com/push-in/pam) | [**PAM Desktop**](https://github.com/push-in/pam-desktop) | [**PAM Native**](https://github.com/push-in/pam-native) | [**Ecosystem**](https://github.com/push-in/pam#ecosystem) |
+| --- | --- | --- | --- |
+| the runtime and CLI | native desktop apps in PHP | native Android and iOS apps in PHP | every official package and plugin |
+
+<sub>Docs: [push-in.github.io/pam-docs](https://push-in.github.io/pam-docs/introduction/) · [Issues](https://github.com/push-in/pam-http/issues)</sub>
+
+<p align="center"><sub><a href="LICENSE">Apache License 2.0</a>: use, modify and distribute for any purpose, including commercially · Made in Brazil by Pushin</sub></p>
